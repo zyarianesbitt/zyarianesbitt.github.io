@@ -1,0 +1,54 @@
+body {
+    font-family: Georgia, serif;
+    background-color: #f2ecd8;
+    color: #2b2b2b;
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 0 20px;
+    text-align: center;
+}
+
+.author {
+    letter-spacing: 3px;
+    font-size: 14px;
+}
+
+.title {
+    font-family: "Brush Script MT", cursive;
+    font-size: 48px;
+    margin: 10px 0 30px;
+}
+
+.cover {
+    max-width: 100%;
+    border: 1px solid #ccc;
+}
+
+.passage {
+    text-align: left;
+    font-size: 15px;
+    line-height: 1.7;
+    margin-top: 25px;
+}
+
+.highlight {
+    background-color: #ffd54f;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+.bold-red {
+    font-weight: bold;
+    color: #c62828;
+}
+
+nav {
+    margin-top: 30px;
+}
+
+a {
+    color: #2e7d32;
+    font-weight: bold;
+}
