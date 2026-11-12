@@ -1,0 +1,4 @@
+.claude/
+*.zip
+screenshots/
+.DS_Store

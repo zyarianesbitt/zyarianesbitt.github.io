@@ -1,0 +1,9 @@
+{
+  "name": "zyaria-personal-webpage",
+  "version": "1.0.0",
+  "description": "Assignment 6: a simple Node server for my personal webpage (no Express)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
