@@ -186,18 +186,24 @@ function save(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* page still works without it */ }
 }
 
-// ---------- math (same as routers/location.py) ----------
+// ---------- math (same rules as routers/location.py) ----------
+const MAX_ACCURACY_M = 50; // the server ignores readings less accurate than this
 function distanceM(lat1, lon1, lat2, lon2) {
   const R = 6371000, rad = Math.PI / 180;
   const dPhi = (lat2 - lat1) * rad, dLambda = (lon2 - lon1) * rad;
   const a = Math.sin(dPhi / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLambda / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }
-function matchBuilding(lat, lon) {
+// A reading matches a building only if its distance from the pin PLUS its GPS
+// error still fits inside the building's radius, so a fuzzy fix can't be
+// counted as being inside. Readings worse than 50 m never match.
+function matchBuilding(lat, lon, accuracy) {
+  const uncertainty = accuracy || 0;
+  if (uncertainty > MAX_ACCURACY_M) return null;
   let best = null, bestD = null;
   for (const b of BUILDINGS) {
     const d = distanceM(lat, lon, b.latitude, b.longitude);
-    if (d <= b.radius_m && (bestD === null || d < bestD)) { best = b; bestD = d; }
+    if (d + uncertainty <= b.radius_m && (bestD === null || d < bestD)) { best = b; bestD = d; }
   }
   return best;
 }
@@ -264,7 +270,7 @@ $("record").addEventListener("click", async () => {
     const pos = await getBestFix();
     const { latitude, longitude, accuracy } = pos.coords;
     const expected = BUILDINGS.find((b) => b.name === expectedName);
-    const detected = matchBuilding(latitude, longitude);
+    const detected = matchBuilding(latitude, longitude, accuracy);
     const reading = {
       tested_at: new Date(pos.timestamp || Date.now()).toISOString(),
       device: $("device").value.trim() || null,
@@ -297,11 +303,20 @@ function showLast(r) {
   } else if (r.matched) {
     cls = "good"; title = `Matched ${r.expected_building}`;
     body = `${Math.round(r.distance_to_pin_m)} m from its pin, accurate to about ${Math.round(r.accuracy_m)} m.`;
+  } else if (r.accuracy_m > MAX_ACCURACY_M) {
+    cls = "bad"; title = "GPS too weak to match";
+    body = `Accurate to only about ${Math.round(r.accuracy_m)} m, and Bloom ignores anything worse than ${MAX_ACCURACY_M} m. Try again in a minute or closer to a window.`;
   } else {
     cls = "bad"; title = r.detected_building ? `Detected ${r.detected_building} instead` : "Not matched to any building";
-    body = `${Math.round(r.distance_to_pin_m)} m from ${r.expected_building}'s pin, accurate to about ${Math.round(r.accuracy_m)} m.`;
+    body = `${Math.round(r.distance_to_pin_m)} m from ${r.expected_building}'s pin, accurate to about ${Math.round(r.accuracy_m)} m. `
+      + `To match, distance plus accuracy has to fit inside the ${expectedRadius(r.expected_building)} m radius.`;
   }
   $("lastResult").innerHTML = `<div class="result ${cls}"><strong>${escapeHtml(title)}</strong>${escapeHtml(body)}</div>`;
+}
+
+function expectedRadius(name) {
+  const b = BUILDINGS.find((x) => x.name === name);
+  return b ? b.radius_m : 40;
 }
 
 // ---------- results ----------
